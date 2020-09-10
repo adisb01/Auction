@@ -1,0 +1,126 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+
+<div>
+
+    <h2 style="padding: 10px; display:inline-block"> {{ listing.title}} </h2>
+    <h6 style="display:inline-block"> Posted by {{ listing.auctioneer.username }} </h6>
+
+</div>
+ 
+{% if listing.picture %}
+    <img src={{ listing.picture }} height="300" style="border: thin solid black;">
+{% endif %}
+
+<div style="padding: 10px;">
+
+    <h3 style="color: maroon; display: inline-block; padding-right: 10px;"> $ {{ listing.getPrice }} </h3>
+    {% if listing.bid %}
+        <h5 style="color: maroon; display: inline-block"> (bid placed by {{ listing.bid.bidder.username }}) </h3>
+    {% else %}
+        <h5 style="color: maroon; display: inline-block"> (starting bid) </h3>
+    {% endif %}
+
+    {% if user.is_authenticated %}
+    <form action="{% url 'watchlist' %}" method="post" style="padding: 5px;">
+
+        {% csrf_token %}
+        {% if on_watchlist %}
+        <button type="submit" name="listing_id" value={{ listing.id }} class="btn btn-outline-primary"
+            style="display: inline-block;">Remove from Watchlist</button>
+        {% else %}
+        <button type="submit" name="listing_id" value={{ listing.id }} class="btn btn-primary"
+            style="display: inline-block;">Add to Watchlist</button>
+        {% endif %}
+
+    </form>
+
+    {% if is_owner %}
+
+    {% if listing.closed %}
+
+    <button type="button" style = "display: inline-block; padding: 5px" class ="btn btn-outline-danger">Listing Closed</button>
+
+    {% else %}
+
+    <form action="{% url 'listing' listing.id %}" method="post" style="padding: 5px; display: inline-block">
+
+        {% csrf_token %}
+        <button type="submit" name="action" value="close" class="btn btn-danger">Close
+            Listing</button>
+
+    </form>
+
+    {% endif %}
+    {% endif %}
+    {% endif %}
+
+</div>
+
+{% if listing.closed %}
+
+    {% if is_highest_bidder %}
+        <h4 style="color: green;"> Congrats! You won this item. </h4>
+    {% else %}
+        <h4 style="color: maroon;"> {{ listing.bid.bidder.username }} already won this item. </h4> 
+    {% endif %}
+{% else %}
+
+    {% if user.is_authenticated %} 
+    <form action="{% url 'listing' listing.id %}" method="post" style="padding: 15px; display: inline-block">
+
+        {% csrf_token %}
+        <label style="font-size: medium;">Bid Higher: </label>
+        <input type="number" step="0.01" min="0" max="9999999" name="bid">
+        <input type="submit" class="btn btn-primary">
+    
+        {% if alertMessage %}
+        <label style="font-size: medium; color: maroon;"> {{ alertMessage }} </label>
+        {% endif %}
+    
+    </form>
+    {% else %}
+        <h4 style="padding: 15px; color: maroon;"> Must sign in to bid </h6>
+    {% endif %}
+
+
+{% endif %}
+
+{% if listing.category %}
+    <div style = "padding-left: 15px;">
+        <h4> Category: </h4>
+        <p style="font-size: large;"> {{ listing.category}} </p>
+    </div>
+{% else %}
+    <h3 style="padding-left: 15px;"> No Category Listed</h3>
+{% endif %}
+
+<div style = "padding-left: 15px;">
+    <h4> Description: </h4>
+    <p> {{ listing.description }} </p>
+</div>
+
+<div style = "padding: 15px;">
+    <h4> Comments: </h4>
+
+{% if user.is_authenticated %}
+
+<form action="{% url 'listing' listing.id %}" method="post" style="display: inline-block">
+    {% csrf_token %}
+    <textarea name="comment" cols="50" rows="5" placeholder="Enter comment here"></textarea>
+    <input type="submit" class="btn btn-primary">
+</form>
+{% endif %}
+
+{% for comment in comments %}
+    
+    <div style="pad: 5px; background-color: lightskyblue;"> 
+        <h5>{{ comment.commentor.username }}</h6>
+        <p> {{ comment.text }} </p>
+    </div>
+{% empty %}
+    <p> No comments currently </p>
+{% endfor %}
+</div>
+{% endblock %}
